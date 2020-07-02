@@ -10,6 +10,7 @@
 
 #import "DZNPhotoDisplayViewCell.h"
 #import "UIImageView+WebCache.h"
+#import <SDWebImage/SDWebImage.h>
 
 @implementation DZNPhotoDisplayViewCell
 @synthesize imageView = _imageView;
@@ -52,7 +53,7 @@
     
     [self.imageView sd_setImageWithURL:URL
                       placeholderImage:nil
-                               options:SDWebImageCacheMemoryOnly
+							   options:nil
                              completed:NULL];
 }
 

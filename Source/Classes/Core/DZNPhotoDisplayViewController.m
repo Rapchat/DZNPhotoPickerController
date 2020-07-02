@@ -18,6 +18,7 @@
 #import "DZNPhotoMetadata.h"
 #import "DZNPhotoTag.h"
 
+#import <SDWebImage/SDWebImage.h>
 #import "SDWebImageManager.h"
 #import "UIImageView+WebCache.h"
 #import "UIScrollView+EmptyDataSet.h"
@@ -438,7 +439,6 @@ static NSUInteger kDZNPhotoDisplayMinimumColumnCount = 4.0;
         [metadata postMetadataUpdate:nil notification:DZNPhotoPickerDidFinishPickingNotification];
     }
     else if (self.navigationController.allowsEditing) {
-        
         UIImage *image = [[SDImageCache sharedImageCache] imageFromMemoryCacheForKey:metadata.sourceURL.absoluteString];
         
         DZNPhotoEditorViewController *controller = [[DZNPhotoEditorViewController alloc] initWithImage:image];
@@ -461,29 +461,25 @@ static NSUInteger kDZNPhotoDisplayMinimumColumnCount = 4.0;
             [controller.activityIndicator startAnimating];
             
             __weak DZNPhotoEditorViewController *weakController = controller;
-            
-            [controller.imageView sd_setImageWithPreviousCachedImageWithURL:metadata.sourceURL
-                                                           placeholderImage:nil
-                                                                    options:SDWebImageCacheMemoryOnly|SDWebImageProgressiveDownload|SDWebImageRetryFailed
-                                                                   progress:NULL
-                                                                  completed:^(UIImage *image, NSError *error, SDImageCacheType cacheType, NSURL *imageURL) {
-                                                                      if (!error) {
-                                                                          weakController.rightButton.enabled = YES;
-                                                                          weakController.imageView.image = image;
-                                                                      }
-                                                                      else {
-                                                                          [[NSNotificationCenter defaultCenter] postNotificationName:DZNPhotoPickerDidFailPickingNotification object:nil userInfo:@{@"error": error}];
-                                                                      }
-                                                                      
-                                                                      [weakController.activityIndicator stopAnimating];
-                                                                  }];
+			
+			[controller.imageView sd_setImageWithURL:metadata.sourceURL completed:^(UIImage * _Nullable image, NSError * _Nullable error, SDImageCacheType cacheType, NSURL * _Nullable imageURL) {
+				if (!error) {
+					weakController.rightButton.enabled = YES;
+					weakController.imageView.image = image;
+				}
+				else {
+					[[NSNotificationCenter defaultCenter] postNotificationName:DZNPhotoPickerDidFailPickingNotification object:nil userInfo:@{@"error": error}];
+				}
+				
+				[weakController.activityIndicator stopAnimating];
+			}];
         }
     }
     else {
         [self setActivityIndicatorsVisible:YES];
         
         [[SDWebImageDownloader sharedDownloader] downloadImageWithURL:metadata.sourceURL
-                                                              options:SDWebImageCacheMemoryOnly|SDWebImageRetryFailed
+                                                              options:nil
                                                              progress:NULL
                                                             completed:^(UIImage *image, NSData *data, NSError *error, BOOL finished){
                                                                 if (image) {
